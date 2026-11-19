@@ -76,6 +76,7 @@ export class Car {
     this.vel = new THREE.Vector3(0, 0, 0);
     this.steerAngle = 0;
     this.wheelSpin = 0;
+    this.hp = 100; // car health: damage smoke shows below 30, 0 is wrecked
     this.driver = 'parked'; // 'parked' | 'player' | 'ai'
     this.radius = CAR_RADIUS; // collision circle, read by the player
     const built = buildCarMesh(kind, color);
@@ -155,6 +156,7 @@ export class Car {
 
 export class Cars {
   constructor(scene, spots) {
+    this._scene = scene;
     this.cars = spots.map(
       (s) => new Car(scene, s.kind, s.color, s.x, s.z, s.angle),
     );
@@ -163,6 +165,14 @@ export class Cars {
 
   get all() {
     return this.cars;
+  }
+
+  // Spawn one extra car into the city (the armored truck for mission 7,
+  // or a staged car for a screenshot deep link). Returns the Car.
+  spawn(kind, color, x, z, heading) {
+    const car = new Car(this._scene, kind, color, x, z, heading);
+    this.cars.push(car);
+    return car;
   }
 
   nearestDrivable(pos, maxDist) {
