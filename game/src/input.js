@@ -5,6 +5,7 @@ export class Input {
   constructor(canvas) {
     this.keys = new Set();
     this._pressed = new Set(); // keys pressed since last pressed() read
+    this._clicked = false; // mouse button pressed since last clicked() read
     this.yaw = Math.PI; // camera starts looking north down the main avenue
     this.pitch = 0.32; // slightly above the horizon
     this.locked = false;
@@ -17,6 +18,7 @@ export class Input {
     });
     window.addEventListener('keyup', (event) => this.keys.delete(event.code));
     window.addEventListener('blur', () => { this.keys.clear(); this._pressed.clear(); });
+    window.addEventListener('mousedown', () => { this._clicked = true; });
 
     document.addEventListener('pointerlockchange', () => {
       this.locked = document.pointerLockElement === canvas;
@@ -54,6 +56,18 @@ export class Input {
     const hit = this._pressed.has(code);
     this._pressed.delete(code);
     return hit;
+  }
+
+  // Edge-triggered mouse click, for punching and shooting. The harness
+  // drives it with simulateClick() because its window stub has no events.
+  clicked() {
+    const hit = this._clicked;
+    this._clicked = false;
+    return hit;
+  }
+
+  simulateClick() {
+    this._clicked = true;
   }
 
   // -1..1 strafe and -1..1 forward intent, from the held keys.
