@@ -15,6 +15,15 @@ export class Hud {
     this._prompt = document.getElementById('prompt');
     this._map = document.getElementById('minimap');
     this._mapCtx = this._map.getContext('2d');
+    this._objective = document.getElementById('objective');
+    this._timer = document.getElementById('timer');
+    this._ammo = document.getElementById('ammo');
+    this._radio = document.getElementById('radio');
+    this._banner = document.getElementById('banner');
+    this._bannerTitle = document.getElementById('bannerTitle');
+    this._bannerSub = document.getElementById('bannerSub');
+    this._bannerUntil = 0;
+    this._ending = document.getElementById('ending');
   }
 
   show() {
@@ -31,11 +40,63 @@ export class Hud {
     }
   }
 
+  // Mission objective line across the top of the screen.
+  setObjective(text) {
+    this._objective.textContent = text || '';
+  }
+
+  // Mission countdown in mm:ss; null hides it.
+  setTimer(seconds) {
+    if (seconds === null || seconds === undefined) {
+      this._timer.classList.add('hidden');
+      return;
+    }
+    const s = Math.max(0, Math.ceil(seconds));
+    this._timer.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+    this._timer.classList.remove('hidden');
+  }
+
+  // Current weapon readout ("FISTS" or "PISTOL  ∞").
+  setWeapon(label) {
+    this._ammo.textContent = label || '';
+  }
+
+  // Radio station readout ("♪ SURF 98.5" or "♪ MUTED"); null hides it.
+  setRadio(label) {
+    if (!this._radio) return;
+    if (label) {
+      this._radio.textContent = label;
+      this._radio.classList.remove('hidden');
+    } else {
+      this._radio.classList.add('hidden');
+    }
+  }
+
+  // The story ending screen after the finale: the city is Rook's.
+  showEnding() {
+    if (!this._ending) return;
+    const cash = document.getElementById('endingCash');
+    if (cash) cash.textContent = `You finished with $${this.cash.toLocaleString('en-US')} in your pocket.`;
+    this._ending.classList.remove('hidden');
+  }
+
+  hideEnding() {
+    if (this._ending) this._ending.classList.add('hidden');
+  }
+
+  // Big centre banner (MISSION COMPLETE, BUSTED, ...) for ms.
+  banner(title, sub, ms = 3000) {
+    this._bannerTitle.textContent = title;
+    this._bannerSub.textContent = sub || '';
+    this._banner.classList.remove('hidden');
+    this._bannerUntil = performance.now() + ms;
+  }
+
   // Refresh the DOM readouts; cheap enough to run every frame.
   // driving is the Car the player is in, or null on foot; extras holds
-  // { cars, peds } for the minimap dots.
+  // { cars, peds, police, rivals, marker } for the minimap dots.
   update(player, driving, extras) {
-    this._healthFill.style.width = `${this.health}%`;
+    this._healthFill.style.width = `${Math.max(0, this.health)}%`;
     this._cash.textContent = `$${this.cash.toLocaleString('en-US')}`;
     const stars = this._wanted.children;
     for (let i = 0; i < stars.length; i++) {
@@ -44,6 +105,10 @@ export class Hud {
     const speed = driving ? driving.forwardSpeed : player.speed;
     const mph = Math.round(Math.abs(speed) * 2.237);
     this._speedo.textContent = `${mph} mph`;
+    if (this._bannerUntil && performance.now() > this._bannerUntil) {
+      this._banner.classList.add('hidden');
+      this._bannerUntil = 0;
+    }
     this._drawMinimap(player, driving, extras);
   }
 
@@ -84,12 +149,38 @@ export class Hud {
     // grey = parked), pedestrians as tiny white dots.
     if (extras) {
       for (const car of extras.cars || []) {
+        // Police are drawn blue below, so skip them here.
+        if (car.driver === 'police' || car.driver === 'roadblock' || car.driver === 'disabled') continue;
         ctx.fillStyle = car.driver === 'ai' ? '#ff8c42' : '#bbbbbb';
         ctx.fillRect(px(car.pos.x) - 1.5, py(car.pos.z) - 1.5, 3, 3);
+      }
+      // Police cars as blue dots, rival crew as red dots.
+      ctx.fillStyle = '#4fa8ff';
+      for (const car of extras.police || []) {
+        ctx.fillRect(px(car.pos.x) - 2, py(car.pos.z) - 2, 4, 4);
+      }
+      ctx.fillStyle = '#ff4d4d';
+      for (const ped of extras.rivals || []) {
+        if (ped.defeated) continue;
+        ctx.fillRect(px(ped.pos.x) - 2, py(ped.pos.z) - 2, 4, 4);
       }
       ctx.fillStyle = '#ffffff';
       for (const ped of extras.peds || []) {
         ctx.fillRect(px(ped.pos.x) - 1, py(ped.pos.z) - 1, 2, 2);
+      }
+      // Mission marker: a pulsing yellow diamond.
+      const marker = extras.marker;
+      if (marker) {
+        const pulse = 6 + Math.sin(performance.now() * 0.006) * 2;
+        ctx.save();
+        ctx.translate(px(marker.x), py(marker.z));
+        ctx.rotate(Math.PI / 4);
+        ctx.fillStyle = '#ffd23e';
+        ctx.strokeStyle = '#3a2400';
+        ctx.lineWidth = 1;
+        ctx.fillRect(-pulse / 2, -pulse / 2, pulse, pulse);
+        ctx.strokeRect(-pulse / 2, -pulse / 2, pulse, pulse);
+        ctx.restore();
       }
     }
 
