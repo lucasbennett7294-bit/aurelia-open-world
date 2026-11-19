@@ -41,16 +41,25 @@ export class Player {
       return mesh;
     };
 
-    // Legs (pivot at the hip so they can swing).
+    // Legs (pivot at the hip so they can swing). Shoes ride on the legs
+    // so they swing with the walk cycle.
     this.legL = add(new THREE.BoxGeometry(0.22, 0.8, 0.24), jeans, -0.14, 0.4, 0);
     this.legL.geometry.translate(0, -0.4, 0);
     this.legL.position.y = 0.8;
     this.legR = add(new THREE.BoxGeometry(0.22, 0.8, 0.24), jeans, 0.14, 0.4, 0);
     this.legR.geometry.translate(0, -0.4, 0);
     this.legR.position.y = 0.8;
-    // Torso, shirt stripe and arms (pivot at the shoulder).
+    const shoeMat = new THREE.MeshLambertMaterial({ color: 0x2a2320 });
+    for (const leg of [this.legL, this.legR]) {
+      const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.12, 0.36), shoeMat);
+      shoe.position.set(0, -0.74, 0.05);
+      shoe.castShadow = true;
+      leg.add(shoe);
+    }
+    // Torso, shirt stripe, belt, and arms (pivot at the shoulder).
     add(new THREE.BoxGeometry(0.62, 0.68, 0.34), jacket, 0, 1.14, 0);
     add(new THREE.BoxGeometry(0.64, 0.12, 0.36), shirt, 0, 1.42, 0);
+    add(new THREE.BoxGeometry(0.64, 0.08, 0.36), shoeMat, 0, 0.82, 0);
     this.armL = add(new THREE.BoxGeometry(0.18, 0.62, 0.2), jacket, -0.42, 1.18, 0);
     this.armL.geometry.translate(0, -0.31, 0);
     this.armL.position.y = 1.48;
