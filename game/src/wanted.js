@@ -18,6 +18,12 @@ export class Wanted {
     this._quiet = 0;
   }
 
+  // The police saw the player: the quiet timer restarts, so the level
+  // only decays once the player is out of sight and out of range.
+  seen() {
+    this._quiet = 0;
+  }
+
   update(dt) {
     if (this.level <= 0) return;
     this._quiet += dt;
