@@ -17,25 +17,22 @@ function clamp(v, lo, hi) {
   return v < lo ? lo : v > hi ? hi : v;
 }
 
-// Circle (car) vs building AABBs, axis by axis like the player: sliding
-// along a wall keeps the velocity component that runs parallel to it.
-function collideBuildings(pos, vel, colliders) {
-  let nextX = pos.x;
-  let nextZ = pos.z;
+// Circle (car) vs building AABBs, axis by axis like the player: the
+// caller passes the pre-move position, and a blocked axis keeps it,
+// which lets the car slide along a wall instead of sticking to it.
+function collideBuildings(pos, prevX, prevZ, vel, colliders) {
   for (const box of colliders) {
-    if (nextX + CAR_RADIUS > box.minX && nextX - CAR_RADIUS < box.maxX &&
-        pos.z + CAR_RADIUS > box.minZ && pos.z - CAR_RADIUS < box.maxZ) {
-      nextX = pos.x;
+    if (pos.x + CAR_RADIUS > box.minX && pos.x - CAR_RADIUS < box.maxX &&
+        prevZ + CAR_RADIUS > box.minZ && prevZ - CAR_RADIUS < box.maxZ) {
+      pos.x = prevX;
       vel.x *= -0.15;
     }
-    if (pos.x + CAR_RADIUS > box.minX && pos.x - CAR_RADIUS < box.maxX &&
-        nextZ + CAR_RADIUS > box.minZ && nextZ - CAR_RADIUS < box.maxZ) {
-      nextZ = pos.z;
+    if (prevX + CAR_RADIUS > box.minX && prevX - CAR_RADIUS < box.maxX &&
+        pos.z + CAR_RADIUS > box.minZ && pos.z - CAR_RADIUS < box.maxZ) {
+      pos.z = prevZ;
       vel.z *= -0.15;
     }
   }
-  pos.x = nextX;
-  pos.z = nextZ;
 }
 
 // Pairwise circle push-apart for cars, with a small velocity exchange
@@ -103,6 +100,12 @@ export class Car {
     const fx = Math.sin(this.heading);
     const fz = Math.cos(this.heading);
     let fwd = this.vel.x * fx + this.vel.z * fz;
+    // Split the velocity FIRST: the lateral part is what grip bleeds
+    // away, and it must be measured against the old forward speed —
+    // measuring it after the engine changes fwd would eat most of
+    // every acceleration as phantom slide.
+    const latX = this.vel.x - fwd * fx;
+    const latZ = this.vel.z - fwd * fz;
 
     if (drive.throttle > 0 && fwd < this.spec.topSpeed) {
       fwd += this.spec.accel * drive.throttle * dt;
@@ -114,10 +117,8 @@ export class Car {
     if (drive.throttle === 0) fwd *= Math.exp(-0.35 * dt);
     if (drive.handbrake) fwd *= Math.exp(-2.2 * dt);
 
-    // Rebuild the velocity: forward component plus a lateral part that
-    // grip bleeds away (weakly with the handbrake, for a drift feel).
-    const latX = this.vel.x - fwd * fx;
-    const latZ = this.vel.z - fwd * fz;
+    // Rebuild the velocity: forward component plus the lateral part,
+    // bled away by grip (weakly with the handbrake, for a drift feel).
     const grip = drive.handbrake ? 2.2 : 9;
     const latK = Math.exp(-grip * dt);
     this.vel.x = fwd * fx + latX * latK;
@@ -128,11 +129,17 @@ export class Car {
     const maxSteer = 0.55 - 0.35 * Math.min(1, speedAbs / 30);
     const targetSteer = drive.steer * maxSteer;
     this.steerAngle += clamp(targetSteer - this.steerAngle, -dt * 6, dt * 6);
-    this.heading += (fwd / WHEELBASE) * Math.tan(this.steerAngle) * dt;
+    // Cap the yaw rate: at speed a real car cannot turn as fast as the
+    // bicycle model says, and the cap is what makes fast driving feel
+    // like understeer instead of a spin.
+    const turnRate = clamp((fwd / WHEELBASE) * Math.tan(this.steerAngle), -1.1, 1.1);
+    this.heading += turnRate * dt;
 
+    const prevX = this.pos.x;
+    const prevZ = this.pos.z;
     this.pos.x += this.vel.x * dt;
     this.pos.z += this.vel.z * dt;
-    collideBuildings(this.pos, this.vel, colliders);
+    collideBuildings(this.pos, prevX, prevZ, this.vel, colliders);
     this.pos.x = clamp(this.pos.x, MAP.minX, MAP.maxX);
     this.pos.z = clamp(this.pos.z, MAP.minZ, MAP.maxZ);
 
@@ -182,7 +189,7 @@ export class Cars {
         witnessed = ctx.pedestrians.anyWithin(car.pos.x, car.pos.z, 25);
       }
       if (!witnessed && ctx.traffic) {
-        witnessed = ctx.traffic.anyWithin(car.pos.x, car.pos.z, 30, car);
+        witnessed = ctx.traffic.anyWithin(car.pos.x, car.pos.z, 18, car);
       }
       if (wasAi && ctx.traffic) ctx.traffic.removeCar(car);
       if (wasAi && ctx.pedestrians) {
@@ -203,6 +210,8 @@ export class Cars {
     car.driver = 'parked';
     car.vel.set(0, 0, 0);
     this.current = null;
+    // A carjacked AI car joins the parked list so it can be entered again.
+    if (!this.cars.includes(car)) this.cars.push(car);
     const rx = -Math.cos(car.heading);
     const rz = Math.sin(car.heading);
     player.pos.set(car.pos.x + rx * 2.4, 0, car.pos.z + rz * 2.4);
