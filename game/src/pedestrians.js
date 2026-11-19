@@ -36,8 +36,11 @@ class Pedestrian {
   constructor(scene, x, z, color, skin) {
     this.pos = new THREE.Vector3(x, 0, z);
     this.heading = 0;
-    this.state = 'walk'; // 'walk' | 'flee' | 'down'
+    this.state = 'walk'; // 'walk' | 'flee' | 'down' | 'rival'
     this.timer = 0;
+    this.defeated = false; // a rival put down for good (Day 3, mission 4)
+    this._punchTimer = 0; // a rival's swing cooldown
+    this.targetPos = null; // the player, for rivals to chase
     this.walkAxis = 'x';
     this.walkFixed = z;
     this.walkFrom = -150;
@@ -84,6 +87,8 @@ class Pedestrian {
   }
 
   knockDown(fromX, fromZ) {
+    // A rival put down in a fight stays down: mission 4 counts them.
+    if (this.state === 'rival') this.defeated = true;
     this.state = 'down';
     this.timer = 2.5;
     const dx = this.pos.x - fromX;
@@ -98,6 +103,8 @@ class Pedestrian {
   update(dt, colliders) {
     let speed = 0;
     if (this.state === 'down') {
+      // A defeated rival never gets up again.
+      if (this.defeated) return;
       this.timer -= dt;
       if (this.timer <= 0) {
         this.state = 'flee';
@@ -107,6 +114,31 @@ class Pedestrian {
         this.fleeX = Math.sin(this.heading);
         this.fleeZ = Math.cos(this.heading);
       }
+      return;
+    }
+    if (this.state === 'rival' && this.targetPos) {
+      // Chase the player and swing when close; the punch itself is
+      // reported by Pedestrians.update through its ctx callback.
+      this._punchTimer = Math.max(0, this._punchTimer - dt);
+      const dx = this.targetPos.x - this.pos.x;
+      const dz = this.targetPos.z - this.pos.z;
+      const d = Math.hypot(dx, dz) || 1;
+      if (d > 1.4) {
+        speed = 2.6;
+        this.pos.x += (dx / d) * speed * dt;
+        this.pos.z += (dz / d) * speed * dt;
+        this.heading = Math.atan2(dx, dz);
+      } else if (this._punchTimer <= 0) {
+        this._wantPunch = true;
+        this._punchTimer = 1.0;
+      }
+      collideCircle(this.pos, colliders, PED_RADIUS);
+      this.pos.x = Math.max(-190, Math.min(400, this.pos.x));
+      this.pos.z = Math.max(-190, Math.min(190, this.pos.z));
+      this.group.position.set(this.pos.x, this.group.position.y, this.pos.z);
+      this.group.rotation.y = this.heading;
+      const t = performance.now() * 0.012;
+      this.group.position.y = Math.abs(Math.sin(t)) * 0.05;
       return;
     }
     if (this.state === 'flee') {
@@ -199,6 +231,25 @@ export class Pedestrians {
     return ped;
   }
 
+  // A rival crew member for mission 4: dark red shirt, chases the
+  // player and swings at them. Returns the pedestrian.
+  spawnRival(x, z) {
+    const skin = SKINS[Math.floor(this.rand() * SKINS.length)];
+    const ped = new Pedestrian(this.scene, x, z, 0x8e2f23, skin);
+    ped.state = 'rival';
+    ped.defeated = false;
+    this.list.push(ped);
+    return ped;
+  }
+
+  get rivals() {
+    return this.list.filter((p) => p.state === 'rival' || p.defeated);
+  }
+
+  get defeatedRivals() {
+    return this.list.filter((p) => p.defeated).length;
+  }
+
   anyWithin(x, z, radius) {
     for (const ped of this.list) {
       if (ped.state === 'down') continue;
@@ -209,6 +260,8 @@ export class Pedestrians {
 
   alert(x, z, radius) {
     for (const ped of this.list) {
+      // Rivals are in a fight: gunfire does not make them run.
+      if (ped.state === 'rival' || ped.state === 'down') continue;
       if (Math.hypot(ped.pos.x - x, ped.pos.z - z) < radius) {
         ped.fleeFrom(x, z);
       }
@@ -229,8 +282,15 @@ export class Pedestrians {
     }
   }
 
-  update(dt, cars, playerPos) {
+  // ctx (optional): { onRivalPunch, playerDriving } — onRivalPunch is
+  // called with the damage when a rival lands a swing on the player.
+  // Rivals only chase a player on foot; against a car they mill about.
+  update(dt, cars, playerPos, ctx) {
     for (const ped of this.list) {
+      // Rivals chase the player; their target is this frame's position.
+      if (ped.state === 'rival') {
+        ped.targetPos = ctx && ctx.playerDriving ? null : playerPos;
+      }
       // Flee from any fast car closing in.
       if (ped.state === 'walk') {
         for (const car of cars) {
@@ -243,6 +303,10 @@ export class Pedestrians {
         }
       }
       ped.update(dt, this.colliders);
+      if (ped._wantPunch) {
+        ped._wantPunch = false;
+        if (ctx && ctx.onRivalPunch) ctx.onRivalPunch(8);
+      }
     }
   }
 }
