@@ -18,6 +18,12 @@
   #wanted { margin-top: 4px; font-size: 26px; letter-spacing: 4px; color: #ffd23e; }
   #wanted .off { color: rgba(255,255,255,.35); }
   #objective { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 15px; background: rgba(0,0,0,.45); padding: 7px 14px; border-radius: 4px; border-left: 4px solid #ffd23e; }
+  #timer { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); font-size: 26px; font-weight: bold; letter-spacing: 2px; background: rgba(0,0,0,.55); padding: 4px 14px; border-radius: 4px; border: 1px solid rgba(255,210,62,.8); }
+  #ammo { position: absolute; bottom: 44px; left: 16px; font-size: 16px; font-weight: bold; letter-spacing: 1px; background: rgba(0,0,0,.4); padding: 6px 10px; border-radius: 4px; }
+  #radio { position: absolute; bottom: 82px; left: 16px; font-size: 14px; font-weight: bold; letter-spacing: 1px; background: rgba(0,0,0,.4); padding: 6px 10px; border-radius: 4px; color: #ffd23e; }
+  #banner { position: absolute; top: 32%; left: 50%; transform: translateX(-50%); text-align: center; background: rgba(0,0,0,.65); padding: 18px 44px; border-radius: 8px; border: 2px solid #ffd23e; }
+  #bannerTitle { font-size: 42px; font-weight: bold; letter-spacing: 6px; color: #ffd23e; }
+  #bannerSub { margin-top: 6px; font-size: 16px; color: #ffe9b0; }
   #minimapWrap { position: absolute; top: 14px; right: 16px; background: rgba(0,0,0,.45); padding: 6px; border-radius: 6px; border: 2px solid rgba(255,255,255,.5); }
   #minimap { display: block; }
   #hint { position: absolute; bottom: 12px; left: 16px; font-size: 13px; opacity: .85; background: rgba(0,0,0,.4); padding: 6px 10px; border-radius: 4px; }
@@ -34,6 +40,21 @@
   #start .go { margin-top: 30px; font-size: 22px; font-weight: bold; letter-spacing: 3px; background: #ffd23e; color: #3a2400; padding: 14px 42px; border-radius: 6px; animation: pulse 1.4s infinite; }
   @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
   #start .fine { margin-top: 22px; font-size: 12px; opacity: .65; }
+  #start .jobs { margin-top: 14px; font-size: 14px; line-height: 1.7; text-align: left; background: rgba(0,0,0,.45); padding: 14px 28px; border-radius: 8px; }
+  #start .jobs b { color: #ffd23e; }
+  #start .jobs .done { color: #7de89b; }
+  #start .jobs .locked { opacity: .45; }
+  #continueBtn { margin-top: 16px; font-size: 20px; font-weight: bold; letter-spacing: 3px; background: #37d67a; color: #06351c; padding: 12px 40px; border-radius: 6px; cursor: pointer; }
+  #continueBtn:hover { background: #5ce394; }
+
+  /* ---- Pause menu and ending screen ---- */
+  .overlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; background: rgba(6,32,52,.78); z-index: 10; pointer-events: auto; }
+  .overlay h1 { margin: 0; font-size: 56px; letter-spacing: 8px; color: #ffd23e; text-shadow: 0 4px 0 #b3541e, 0 8px 24px rgba(0,0,0,.6); }
+  .overlay .sub { margin-top: 12px; font-size: 17px; color: #ffe9b0; line-height: 1.7; }
+  .overlay button { display: block; margin-top: 16px; font-size: 18px; font-weight: bold; letter-spacing: 2px; font-family: inherit; background: #ffd23e; color: #3a2400; border: none; padding: 12px 36px; border-radius: 6px; cursor: pointer; }
+  .overlay button:hover { background: #ffe27a; }
+  .overlay button.ghost { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,.7); }
+  .overlay button.ghost:hover { background: rgba(255,255,255,.12); }
 </style>
 </head>
 <body>
@@ -46,10 +67,28 @@
     <div id="wanted"><span class="off">★</span><span class="off">★</span><span class="off">★</span><span class="off">★</span><span class="off">★</span></div>
   </div>
   <div id="objective">Explore Aurelia Bay — find a car and take it for a spin</div>
+  <div id="timer" class="hidden">01:30</div>
+  <div id="banner" class="hidden"><div id="bannerTitle"></div><div id="bannerSub"></div></div>
   <div id="minimapWrap"><canvas id="minimap" width="180" height="180"></canvas></div>
-  <div id="hint">WASD move &nbsp;·&nbsp; Mouse look &nbsp;·&nbsp; SHIFT run &nbsp;·&nbsp; SPACE jump / handbrake &nbsp;·&nbsp; E enter car</div>
+  <div id="hint">WASD move &nbsp;·&nbsp; Mouse look &nbsp;·&nbsp; SHIFT run &nbsp;·&nbsp; SPACE jump / handbrake &nbsp;·&nbsp; E enter car &nbsp;·&nbsp; M missions &nbsp;·&nbsp; CLICK punch / shoot</div>
+  <div id="ammo">FISTS</div>
+  <div id="radio" class="hidden">♪ SURF 98.5</div>
   <div id="prompt" class="hidden"></div>
   <div id="speedo">0 mph</div>
+</div>
+
+<div id="pause" class="overlay hidden">
+  <h1>PAUSED</h1>
+  <div class="sub">Take a breath, Rook. The city will wait.</div>
+  <button id="resumeBtn">RESUME</button>
+  <button id="restartBtn" class="ghost">RESTART (NEW GAME)</button>
+  <button id="quitBtn" class="ghost">SAVE &amp; QUIT TO MENU</button>
+</div>
+
+<div id="ending" class="overlay hidden">
+  <h1>AURELIA BAY IS YOURS, ROOK.</h1>
+  <div class="sub">Eight jobs. Four guards. One briefcase. Marina was right about you.<br><span id="endingCash"></span><br>Free roam is open — press M to replay any job.</div>
+  <button id="endingBtn">KEEP PLAYING</button>
 </div>
 
 <div id="start">
@@ -59,8 +98,17 @@
   <div class="controls">
     <b>W A S D</b> — move / drive &nbsp;&nbsp; <b>MOUSE</b> — look around<br>
     <b>SHIFT</b> — run &nbsp;&nbsp; <b>SPACE</b> — jump / handbrake<br>
-    <b>E</b> — enter / exit a car
+    <b>E</b> — enter / exit a car &nbsp;&nbsp; <b>CLICK</b> — punch / shoot<br>
+    <b>M</b> — start a mission &nbsp;&nbsp; <b>R</b> — radio &nbsp;&nbsp; <b>0</b> — mute &nbsp;&nbsp; <b>ESC</b> — pause
   </div>
+  <div class="jobs" id="missionList">
+    <b>ROOK'S JOBS</b> — work for Marina Voss, Ocean Drive garage<br>
+    1 · First Wheels — $150 &nbsp; 2 · Harbor Run — $300<br>
+    3 · Heat — $400 &nbsp; 4 · Payback — $500<br>
+    5 · Night Shift — $600 &nbsp; 6 · The Long Con — $750<br>
+    7 · Harbor Heist — $900 &nbsp; 8 · King of the Bay — $1,200
+  </div>
+  <div id="continueBtn" class="hidden">CONTINUE — PICK UP WHERE YOU LEFT OFF</div>
   <div class="go">CLICK TO START</div>
   <div class="fine">Aurelia Bay is an original work. No real city, person or game is depicted.</div>
 </div>
