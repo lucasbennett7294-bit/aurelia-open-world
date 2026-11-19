@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aurelia Bay — Open-World Crime</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0e2a3f; font-family: "Trebuchet MS", Verdana, sans-serif; }
+  #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  .hidden { display: none !important; }
+
+  /* ---- HUD ---- */
+  #hud { position: fixed; inset: 0; pointer-events: none; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
+  #hud .topleft { position: absolute; top: 14px; left: 16px; }
+  #healthbar { width: 220px; height: 14px; border: 2px solid rgba(255,255,255,.85); background: rgba(0,0,0,.45); border-radius: 3px; overflow: hidden; }
+  #healthfill { height: 100%; width: 100%; background: linear-gradient(90deg, #37d67a, #7de89b); }
+  #cash { margin-top: 6px; font-size: 22px; font-weight: bold; letter-spacing: 1px; }
+  #wanted { margin-top: 4px; font-size: 26px; letter-spacing: 4px; color: #ffd23e; }
+  #wanted .off { color: rgba(255,255,255,.35); }
+  #objective { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 15px; background: rgba(0,0,0,.45); padding: 7px 14px; border-radius: 4px; border-left: 4px solid #ffd23e; }
+  #minimapWrap { position: absolute; top: 14px; right: 16px; background: rgba(0,0,0,.45); padding: 6px; border-radius: 6px; border: 2px solid rgba(255,255,255,.5); }
+  #minimap { display: block; }
+  #hint { position: absolute; bottom: 12px; left: 16px; font-size: 13px; opacity: .85; background: rgba(0,0,0,.4); padding: 6px 10px; border-radius: 4px; }
+  #prompt { position: absolute; bottom: 64px; left: 50%; transform: translateX(-50%); font-size: 16px; font-weight: bold; background: rgba(0,0,0,.55); padding: 8px 16px; border-radius: 4px; border: 1px solid rgba(255,210,62,.8); }
+  #speedo { position: absolute; bottom: 12px; right: 16px; font-size: 20px; font-weight: bold; background: rgba(0,0,0,.4); padding: 6px 12px; border-radius: 4px; }
+
+  /* ---- Start screen ---- */
+  #start { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; background: linear-gradient(180deg, rgba(6,32,52,.25) 0%, rgba(6,32,52,.55) 60%, rgba(6,32,52,.82) 100%); cursor: pointer; }
+  #start h1 { margin: 0; font-size: 84px; letter-spacing: 10px; color: #ffd23e; text-shadow: 0 4px 0 #b3541e, 0 8px 24px rgba(0,0,0,.6); }
+  #start h2 { margin: 6px 0 0; font-size: 20px; letter-spacing: 6px; font-weight: normal; color: #ffe9b0; }
+  #start .tag { margin-top: 18px; font-size: 15px; opacity: .9; }
+  #start .controls { margin-top: 26px; font-size: 15px; line-height: 1.9; background: rgba(0,0,0,.45); padding: 14px 28px; border-radius: 8px; }
+  #start .controls b { color: #ffd23e; }
+  #start .go { margin-top: 30px; font-size: 22px; font-weight: bold; letter-spacing: 3px; background: #ffd23e; color: #3a2400; padding: 14px 42px; border-radius: 6px; animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+  #start .fine { margin-top: 22px; font-size: 12px; opacity: .65; }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<div id="hud" class="hidden">
+  <div class="topleft">
+    <div id="healthbar"><div id="healthfill"></div></div>
+    <div id="cash">$0</div>
+    <div id="wanted"><span class="off">★</span><span class="off">★</span><span class="off">★</span><span class="off">★</span><span class="off">★</span></div>
+  </div>
+  <div id="objective">Explore Aurelia Bay — find a car and take it for a spin</div>
+  <div id="minimapWrap"><canvas id="minimap" width="180" height="180"></canvas></div>
+  <div id="hint">WASD move &nbsp;·&nbsp; Mouse look &nbsp;·&nbsp; SHIFT run &nbsp;·&nbsp; SPACE jump / handbrake &nbsp;·&nbsp; E enter car</div>
+  <div id="prompt" class="hidden"></div>
+  <div id="speedo">0 mph</div>
+</div>
+
+<div id="start">
+  <h1>AURELIA BAY</h1>
+  <h2>AN OPEN-WORLD CRIME STORY</h2>
+  <div class="tag">A sun-soaked coastal city. Your rules. Your rise.</div>
+  <div class="controls">
+    <b>W A S D</b> — move / drive &nbsp;&nbsp; <b>MOUSE</b> — look around<br>
+    <b>SHIFT</b> — run &nbsp;&nbsp; <b>SPACE</b> — jump / handbrake<br>
+    <b>E</b> — enter / exit a car
+  </div>
+  <div class="go">CLICK TO START</div>
+  <div class="fine">Aurelia Bay is an original work. No real city, person or game is depicted.</div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.min.js" } }
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
