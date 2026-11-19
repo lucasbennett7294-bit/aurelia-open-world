@@ -69,6 +69,12 @@ class Pedestrian {
     add(new THREE.BoxGeometry(0.58, 0.62, 0.32), shirt, 0, 1.08, 0);
     add(new THREE.BoxGeometry(0.32, 0.34, 0.3), skinMat, 0, 1.6, 0);
     add(new THREE.BoxGeometry(0.34, 0.1, 0.32), hair, 0, 1.8, 0);
+    // Arms at the sides and dark shoes, so the figure reads at a glance.
+    const shoeMat = new THREE.MeshLambertMaterial({ color: 0x2a2320 });
+    add(new THREE.BoxGeometry(0.14, 0.55, 0.16), shirt, -0.38, 1.08, 0);
+    add(new THREE.BoxGeometry(0.14, 0.55, 0.16), shirt, 0.38, 1.08, 0);
+    add(new THREE.BoxGeometry(0.22, 0.1, 0.32), shoeMat, -0.13, 0.05, 0.04);
+    add(new THREE.BoxGeometry(0.22, 0.1, 0.32), shoeMat, 0.13, 0.05, 0.04);
     group.position.copy(this.pos);
     scene.add(group);
     return group;
