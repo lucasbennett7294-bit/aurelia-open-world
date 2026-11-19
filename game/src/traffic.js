@@ -71,6 +71,7 @@ export class Traffic {
         axis, road, dir,
         cruise: CRUISE_MIN + rand() * (CRUISE_MAX - CRUISE_MIN),
         inCrossing: false,
+        turnSlow: 0,
       });
       return car;
     }
@@ -126,6 +127,10 @@ export class Traffic {
 
       // Stop for the car ahead in our lane.
       let targetSpeed = st.cruise;
+      if (st.turnSlow > 0) {
+        targetSpeed = Math.min(targetSpeed, 6); // slow down for a turn
+        st.turnSlow--;
+      }
       for (const other of allCars) {
         if (other === car) continue;
         const dx = other.pos.x - car.pos.x;
@@ -166,6 +171,7 @@ export class Traffic {
           st.axis = st.axis === 'x' ? 'z' : 'x';
           st.road = nearestCross;
           st.dir = this.rand() < 0.5 ? 1 : -1;
+          st.turnSlow = 60; // about a second at low speed through the turn
         }
       } else if (nearestDist > 9) {
         st.inCrossing = false;
