@@ -13,6 +13,13 @@ export const CAR_KINDS = {
   sedan: { length: 4.3, width: 1.9, bodyH: 0.62, cabinL: 2.2, topSpeed: 34, accel: 16 },
   taxi: { length: 4.3, width: 1.9, bodyH: 0.62, cabinL: 2.2, topSpeed: 32, accel: 16 },
   pickup: { length: 4.8, width: 2.0, bodyH: 0.7, cabinL: 1.6, topSpeed: 30, accel: 15 },
+  // Aurelia Bay patrol car: same body as a sedan, a little faster so it
+  // can catch a fleeing sedan. The black-and-white livery and light bar
+  // are added by police.js on top of this mesh.
+  police: { length: 4.3, width: 1.9, bodyH: 0.62, cabinL: 2.2, topSpeed: 38, accel: 18 },
+  // Harbor armored truck: a slow, heavy van with a full cargo box.
+  // Mission 7 steals this one; it lumbers, it does not sprint.
+  armored: { length: 5.4, width: 2.2, bodyH: 0.9, cabinL: 4.2, topSpeed: 24, accel: 10 },
 };
 
 const GLASS = new THREE.MeshLambertMaterial({ color: 0x22303c });
@@ -49,13 +56,14 @@ export function buildCarMesh(kind, color) {
   group.add(body);
 
   // Cabin toward the rear for sedans/taxis; pickups get a short cab and
-  // an open bed with walls instead of a long cabin.
+  // an open bed with walls instead of a long cabin. The armored truck
+  // gets a full body-coloured cargo box instead of a glass cabin.
   const cabin = new THREE.Mesh(
-    new THREE.BoxGeometry(spec.width - 0.2, 0.55, spec.cabinL),
-    GLASS,
+    new THREE.BoxGeometry(spec.width - 0.2, kind === 'armored' ? 0.95 : 0.55, spec.cabinL),
+    kind === 'armored' ? bodyMat : GLASS,
   );
   const cabinZ = kind === 'pickup' ? -(spec.length / 2 - spec.cabinL / 2 - 0.25) : -0.2;
-  cabin.position.set(0, 1.1, cabinZ);
+  cabin.position.set(0, kind === 'armored' ? 1.35 : 1.1, cabinZ);
   cabin.castShadow = true;
   group.add(cabin);
 
