@@ -256,6 +256,26 @@ export function createCity(scene) {
     }
   }
 
+  // --- north bridge arch: the landmark at the north end of Ocean
+  // Drive (x = 156, z = -156), where mission 5's pickup waits. Fixed
+  // geometry, no randomness, so the seeded city is unchanged.
+  const archMat = new THREE.MeshLambertMaterial({ color: 0xe8dcc0 });
+  const archTrim = new THREE.MeshLambertMaterial({ color: 0x2c7a6e });
+  for (const px of [147, 165]) {
+    const pillar = new THREE.Mesh(new THREE.BoxGeometry(2.2, 7, 2.2), archMat);
+    pillar.position.set(px, 3.5, -156);
+    pillar.castShadow = true;
+    scene.add(pillar);
+    colliders.push({ minX: px - 1.1, maxX: px + 1.1, minZ: -157.1, maxZ: -154.9 });
+  }
+  const beam = new THREE.Mesh(new THREE.BoxGeometry(20.2, 1.6, 2.4), archMat);
+  beam.position.set(156, 7.6, -156);
+  beam.castShadow = true;
+  scene.add(beam);
+  const beamTrim = new THREE.Mesh(new THREE.BoxGeometry(20.4, 0.4, 2.6), archTrim);
+  beamTrim.position.set(156, 6.6, -156);
+  scene.add(beamTrim);
+
   // --- palm trees along Ocean Drive (x = 156) and the plaza ---
   const trunkGeo = new THREE.CylinderGeometry(0.16, 0.3, 4.6, 6);
   const trunkMat = new THREE.MeshLambertMaterial({ color: 0x8a6a4a });
