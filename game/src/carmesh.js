@@ -8,6 +8,7 @@
 // only) and an inner group spins around the axle.
 
 import * as THREE from 'three';
+import { std, GLASS_STD, CHROME, TRIM_DARK } from './materials.js';
 
 export const CAR_KINDS = {
   sedan: { length: 4.3, width: 1.9, bodyH: 0.62, cabinL: 2.2, topSpeed: 34, accel: 16 },
@@ -22,10 +23,11 @@ export const CAR_KINDS = {
   armored: { length: 5.4, width: 2.2, bodyH: 0.9, cabinL: 4.2, topSpeed: 24, accel: 10 },
 };
 
-const GLASS = new THREE.MeshLambertMaterial({ color: 0x22303c });
-const TYRE = new THREE.MeshLambertMaterial({ color: 0x141414 });
-const TRIM = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
-const SIGN = new THREE.MeshLambertMaterial({ color: 0xf8f4e8 });
+const GLASS = GLASS_STD; // tinted, low roughness: sun glints off it
+const TYRE = std(0x141414, 0.95, 0);
+const TRIM = TRIM_DARK;
+const SIGN = std(0xf8f4e8, 0.5, 0, 0xfff2b0, 0.55); // taxi sign glows slightly
+const hubGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.26, 8);
 
 function makeWheel(x, z) {
   // Steer group (rotation.y) -> spin group (rotation.x) -> tyre mesh.
@@ -38,6 +40,9 @@ function makeWheel(x, z) {
   tyre.rotation.z = Math.PI / 2;
   tyre.castShadow = true;
   spin.add(tyre);
+  const hub = new THREE.Mesh(hubGeo, CHROME);
+  hub.rotation.z = Math.PI / 2;
+  spin.add(hub);
   steer.add(spin);
   return { steer, spin };
 }
@@ -45,7 +50,7 @@ function makeWheel(x, z) {
 export function buildCarMesh(kind, color) {
   const spec = CAR_KINDS[kind] || CAR_KINDS.sedan;
   const group = new THREE.Group();
-  const bodyMat = new THREE.MeshLambertMaterial({ color });
+  const bodyMat = std(color, 0.32, 0.55); // glossy painted metal
 
   const body = new THREE.Mesh(
     new THREE.BoxGeometry(spec.width, spec.bodyH, spec.length),
@@ -54,6 +59,21 @@ export function buildCarMesh(kind, color) {
   body.position.y = 0.55;
   body.castShadow = true;
   group.add(body);
+
+  // Chrome bumpers, dark grille, side mirrors.
+  for (const bz of [spec.length / 2 + 0.02, -spec.length / 2 - 0.02]) {
+    const bumper = new THREE.Mesh(new THREE.BoxGeometry(spec.width + 0.06, 0.16, 0.1), CHROME);
+    bumper.position.set(0, 0.32, bz);
+    group.add(bumper);
+  }
+  const grille = new THREE.Mesh(new THREE.BoxGeometry(spec.width - 0.7, 0.18, 0.05), TRIM);
+  grille.position.set(0, 0.55, spec.length / 2 + 0.01);
+  group.add(grille);
+  for (const sx of [-1, 1]) {
+    const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.18), TRIM);
+    mirror.position.set(sx * (spec.width / 2 + 0.04), 1.05, 0.6);
+    group.add(mirror);
+  }
 
   // Cabin toward the rear for sedans/taxis; pickups get a short cab and
   // an open bed with walls instead of a long cabin. The armored truck
@@ -101,9 +121,9 @@ export function buildCarMesh(kind, color) {
     group.add(stripeL);
   }
 
-  // Headlights and taillights as small bright boxes.
-  const lightMat = new THREE.MeshLambertMaterial({ color: 0xfff6c9, emissive: 0xffedb0, emissiveIntensity: 0.7 });
-  const tailMat = new THREE.MeshLambertMaterial({ color: 0xc02020, emissive: 0x800000, emissiveIntensity: 0.7 });
+  // Headlights and taillights as small bright boxes, warmer at sunset.
+  const lightMat = new THREE.MeshLambertMaterial({ color: 0xfff6c9, emissive: 0xffedb0, emissiveIntensity: 1.2 });
+  const tailMat = new THREE.MeshLambertMaterial({ color: 0xc02020, emissive: 0x800000, emissiveIntensity: 1.2 });
   for (const sx of [-1, 1]) {
     const head = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.14, 0.06), lightMat);
     head.position.set(sx * (spec.width / 2 - 0.35), 0.62, spec.length / 2 + 0.01);
