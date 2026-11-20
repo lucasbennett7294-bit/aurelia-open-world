@@ -228,7 +228,9 @@ function setupShot(mode) {
     autoDrive = true;
     missions.forceStart(4);
     missions.jumpToStep(2);
-    wanted.raise(3);
+    // Five stars for the cover: the full patrol, roadblock and
+    // helicopter — the most heat the game can show.
+    wanted.raise(5);
     return;
   }
   if (mode === 'mission') {
