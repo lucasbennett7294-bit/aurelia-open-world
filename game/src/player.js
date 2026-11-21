@@ -169,8 +169,11 @@ export class Player {
       return;
     }
     const f = focus || { x: this.pos.x, y: this.pos.y + 1.6, z: this.pos.z, dist: CAMERA_DISTANCE };
-    const yaw = this.input.yaw;
-    const pitch = this.input.pitch;
+    // yawOff/pitchOff let screenshot deep links frame the car at a rear
+    // three-quarter angle, low and close; a dead rear view turns every
+    // car into a black box. Gameplay never passes them.
+    const yaw = this.input.yaw + (f.yawOff || 0);
+    const pitch = this.input.pitch + (f.pitchOff || 0);
     const dist = f.dist;
     const cx = f.x + Math.sin(yaw) * Math.cos(pitch) * dist;
     const cz = f.z + Math.cos(yaw) * Math.cos(pitch) * dist;
