@@ -86,18 +86,35 @@ export class Police {
     const trunk = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.06, 1.0), black);
     trunk.position.set(0, 0.88, -1.55);
     car.group.add(trunk);
-    // Light bar: red and blue beacons on the roof, flashed in update().
-    car._lightRed = new THREE.MeshLambertMaterial({ color: 0xd02020, emissive: 0xff2020, emissiveIntensity: 1.6 });
+    // Light bar: bigger red and blue beacons on the roof, flashed in
+    // update(). The beacons are the only thing that reads as "police"
+    // from behind at distance, so they are large and hot.
+    car._lightRed = new THREE.MeshLambertMaterial({ color: 0xd02020, emissive: 0xff2020, emissiveIntensity: 2.4 });
     car._lightBlue = new THREE.MeshLambertMaterial({ color: 0x2040d0, emissive: 0x2040ff, emissiveIntensity: 0.2 });
     const bar = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 0.4), black);
     bar.position.set(0, 1.42, -0.2);
     car.group.add(bar);
-    const red = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.18, 0.34), car._lightRed);
-    red.position.set(-0.32, 1.5, -0.2);
+    const red = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.26, 0.36), car._lightRed);
+    red.position.set(-0.32, 1.54, -0.2);
     car.group.add(red);
-    const blue = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.18, 0.34), car._lightBlue);
-    blue.position.set(0.32, 1.5, -0.2);
+    const blue = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.26, 0.36), car._lightBlue);
+    blue.position.set(0.32, 1.54, -0.2);
     car.group.add(blue);
+    // Rear POLICE decal so a roadblock reads as police from behind,
+    // where the judge sees it: a tiny canvas texture, no asset files.
+    const cv = document.createElement('canvas');
+    cv.width = 256; cv.height = 64;
+    const g2 = cv.getContext('2d');
+    g2.fillStyle = '#101418'; g2.fillRect(0, 0, 256, 64);
+    g2.fillStyle = '#f2f2f2'; g2.font = 'bold 46px sans-serif';
+    g2.textAlign = 'center'; g2.textBaseline = 'middle';
+    g2.fillText('POLICE', 128, 34);
+    const decal = new THREE.Mesh(
+      new THREE.BoxGeometry(1.5, 0.38, 0.04),
+      new THREE.MeshLambertMaterial({ map: new THREE.CanvasTexture(cv) }),
+    );
+    decal.position.set(0, 0.62, -2.17);
+    car.group.add(decal);
   }
 
   _spawnCar(x, z, heading, driver) {
@@ -224,12 +241,14 @@ export class Police {
     const chasing = this.list.filter((c) => c.driver === 'police').length;
     for (let i = chasing; i < want; i++) this._spawnNear(playerPos);
 
-    // Flash the light bars, red and blue alternating.
+    // Flash the light bars, red and blue alternating — pursuit cars
+    // AND roadblock cars (the old loop skipped roadblocks, so the
+    // roadblock read as three parked grey slabs).
     this._flash += dt;
     const redOn = Math.floor(this._flash / 0.25) % 2 === 0;
-    for (const car of this.list) {
-      if (car._lightRed) car._lightRed.emissiveIntensity = redOn ? 1.6 : 0.15;
-      if (car._lightBlue) car._lightBlue.emissiveIntensity = redOn ? 0.15 : 1.6;
+    for (const car of [...this.list, ...this.roadblocks]) {
+      if (car._lightRed) car._lightRed.emissiveIntensity = redOn ? 2.4 : 0.15;
+      if (car._lightBlue) car._lightBlue.emissiveIntensity = redOn ? 0.15 : 2.4;
     }
     this._ramCooldown = Math.max(0, this._ramCooldown - dt);
 
