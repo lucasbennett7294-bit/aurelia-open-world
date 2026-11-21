@@ -169,9 +169,9 @@ export class Player {
       return;
     }
     const f = focus || { x: this.pos.x, y: this.pos.y + 1.6, z: this.pos.z, dist: CAMERA_DISTANCE };
-    // yawOff/pitchOff let screenshot deep links frame the car at a rear
-    // three-quarter angle, low and close; a dead rear view turns every
-    // car into a black box. Gameplay never passes them.
+    // yawOff/pitchOff let a caller offset the chase angle (round 4 used
+    // them for a rear three-quarter shot; round 5 reverted to a centered
+    // rear view, so nothing passes them now). Gameplay never passes them.
     const yaw = this.input.yaw + (f.yawOff || 0);
     const pitch = this.input.pitch + (f.pitchOff || 0);
     const dist = f.dist;
