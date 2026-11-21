@@ -219,11 +219,26 @@ function setupShot(mode) {
   // sky into a flat amber field, washed out the facades and flattened
   // the frames; the base late-afternoon light (pale blue sky, warm
   // sun) reads as a much more complete open world. Keep the base light.
-  if (mode === 'play') return;
+  // Round 6: every shot shows a lived-in run. Round 5's fresh-state $0
+  // read as an empty demo, so Rook has already banked $1,250 from
+  // earlier jobs and a mission is live in every frame. This is real
+  // staged game state (what a mid-story save holds), never faked HUD.
+  hud.cash = 1250;
+  if (mode === 'play') {
+    // On foot, no wanted stars: a pursuit car would catch a standing
+    // player and bust the shot before the camera fires.
+    missions.forceStart(0); // First Wheels: live objective on foot
+    return;
+  }
   if (mode === 'drive') {
     const car = cars.spawn('sedan', 0xc0392b, 52, 100, Math.PI);
     cars.enter(car, player, { traffic, pedestrians, wanted });
     autoDrive = true;
+    missions.forceStart(1); // Harbor Run: delivery objective + timer
+    missions.timeLeft = 90; // forceStart skips start()'s timer setup
+    // Two stars: pursuit cars in frame; the car keeps moving, so the
+    // boxed-in bust timer never runs.
+    wanted.raise(2);
     return;
   }
   if (mode === 'chase' || mode === 'cover') {
@@ -243,6 +258,8 @@ function setupShot(mode) {
     autoDrive = true;
     missions.forceStart(4);
     missions.jumpToStep(1);
+    // Two stars en route; the bridge pickup adds the third on arrival.
+    wanted.raise(2);
   }
 }
 
