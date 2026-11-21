@@ -123,12 +123,12 @@ export function buildCarMesh(kind, color) {
 
   // Headlights and taillights as small bright boxes, warmer at sunset.
   const lightMat = new THREE.MeshLambertMaterial({ color: 0xfff6c9, emissive: 0xffedb0, emissiveIntensity: 1.2 });
-  const tailMat = new THREE.MeshLambertMaterial({ color: 0xc02020, emissive: 0x800000, emissiveIntensity: 1.2 });
+  const tailMat = new THREE.MeshLambertMaterial({ color: 0xe02020, emissive: 0xff2a1a, emissiveIntensity: 2.0 });
   for (const sx of [-1, 1]) {
     const head = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.14, 0.06), lightMat);
     head.position.set(sx * (spec.width / 2 - 0.35), 0.62, spec.length / 2 + 0.01);
     group.add(head);
-    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.14, 0.06), tailMat);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.18, 0.06), tailMat);
     tail.position.set(sx * (spec.width / 2 - 0.35), 0.62, -spec.length / 2 - 0.01);
     group.add(tail);
   }
