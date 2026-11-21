@@ -215,6 +215,12 @@ window.addEventListener('keydown', armAudio, { once: true });
 //   ?shot=cover   — alias for chase
 //   ?shot=mission — mission 5 in progress, marker and objective live
 function setupShot(mode) {
+  // Golden-hour grade for every shot: low warm sun, amber sky. The
+  // flat midday light is what makes the frames read empty and pale.
+  scene.background.set(0xef9e58);
+  scene.fog.color.set(0xe8a06a);
+  sun.color.set(0xff9a4d);
+  sun.position.set(280, 55, 40);
   if (mode === 'play') return;
   if (mode === 'drive') {
     const car = cars.spawn('sedan', 0xc0392b, 52, 100, Math.PI);
@@ -223,7 +229,7 @@ function setupShot(mode) {
     return;
   }
   if (mode === 'chase' || mode === 'cover') {
-    const car = cars.spawn('sedan', 0x2471a3, 52, 100, Math.PI);
+    const car = cars.spawn('sedan', 0xe8491d, 52, 100, Math.PI);
     cars.enter(car, player, { traffic, pedestrians, wanted });
     autoDrive = true;
     missions.forceStart(4);
@@ -339,7 +345,11 @@ function frame() {
 
     const driving = cars.current;
     if (driving) {
-      player.updateCamera(camera, dt, false, { x: driving.pos.x, y: 1.4, z: driving.pos.z, dist: 11.5 });
+      // Screenshot deep links frame the car at a rear three-quarter
+      // angle, low and close, so the paint and the side read.
+      const focus = { x: driving.pos.x, y: 1.4, z: driving.pos.z, dist: 11.5 };
+      if (autoDrive) { focus.dist = 10; focus.yawOff = 0.5; focus.pitchOff = -0.12; }
+      player.updateCamera(camera, dt, false, focus);
     } else {
       player.updateCamera(camera, dt, false);
     }
